@@ -28,7 +28,7 @@ export function TemperatureControl({ temperature, onTemperatureChange }: Tempera
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <Label htmlFor="temperature-slider">Temperatura</Label>
-            <span className="text-2xl font-bold gradient-primary bg-clip-text text-transparent">
+            <span className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               {temperature.toFixed(2)}
             </span>
           </div>
