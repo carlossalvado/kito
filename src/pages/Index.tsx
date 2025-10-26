@@ -1,15 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ApiKeysCard } from "@/components/ApiKeysCard";
 import { VoiceSelector } from "@/components/VoiceSelector";
 import { PromptConfig } from "@/components/PromptConfig";
 import { TemperatureControl } from "@/components/TemperatureControl";
+import { AdvancedSettings } from "@/components/AdvancedSettings";
+import { WhatsAppStatus } from "@/components/WhatsAppStatus";
 import { Button } from "@/components/ui/button";
-import { Bot, Save, Play } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Bot, Save, Play, LogOut, Settings, MessageSquare, Smartphone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 const Index = () => {
   const { toast } = useToast();
+  const { userId, logout } = useAuth();
   const [whatsappToken, setWhatsappToken] = useState("");
   const [geminiKey, setGeminiKey] = useState("");
   const [selectedVoice, setSelectedVoice] = useState("pt-BR-Standard-A");
@@ -21,6 +26,40 @@ const Index = () => {
     optional3: "",
     optional4: "",
   });
+
+  const [advancedSettings, setAdvancedSettings] = useState({
+    autoReply: true,
+    replyDelay: 5,
+    maxConversations: 10,
+    workingHours: {
+      enabled: false,
+      start: "09:00",
+      end: "18:00",
+    },
+    welcomeMessage: "Olá! Sou seu assistente virtual. Como posso ajudar?",
+    offlineMessage: "Olá! No momento estamos fora do horário de atendimento. Responderemos em breve!",
+    language: "pt-BR",
+  });
+
+  // Carregar configurações do usuário do localStorage
+  useEffect(() => {
+    if (userId) {
+      const savedConfig = localStorage.getItem(`config_${userId}`);
+      if (savedConfig) {
+        const config = JSON.parse(savedConfig);
+        setSelectedVoice(config.selectedVoice || "pt-BR-Standard-A");
+        setTemperature(config.temperature || 0.7);
+        setPrompts(config.prompts || {
+          required: "",
+          optional1: "",
+          optional2: "",
+          optional3: "",
+          optional4: "",
+        });
+        setAdvancedSettings(config.advancedSettings || advancedSettings);
+      }
+    }
+  }, [userId]);
 
   const handlePromptChange = (field: string, value: string) => {
     setPrompts((prev) => ({ ...prev, [field]: value }));
@@ -36,25 +75,59 @@ const Index = () => {
       return;
     }
 
+    // Salvar configurações no localStorage por usuário
+    if (userId) {
+      const config = {
+        selectedVoice,
+        temperature,
+        prompts,
+        advancedSettings,
+        savedAt: new Date().toISOString(),
+      };
+      localStorage.setItem(`config_${userId}`, JSON.stringify(config));
+    }
+
     toast({
       title: "Configuração salva!",
       description: "As configurações do agente foram salvas com sucesso.",
     });
   };
 
+  const handleLogout = () => {
+    logout();
+    toast({
+      title: "Logout realizado",
+      description: "Você foi desconectado com sucesso.",
+    });
+  };
+
   const handleTest = () => {
-    if (!whatsappToken || !geminiKey || !prompts.required.trim()) {
+    const whatsappToken = import.meta.env.VITE_WHATSAPP_ACCESS_TOKEN;
+    const whatsappPhoneId = import.meta.env.VITE_WHATSAPP_PHONE_NUMBER_ID;
+    const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+    // Verificar se as APIs estão configuradas no servidor
+    if (!whatsappToken || !whatsappPhoneId || !geminiApiKey) {
       toast({
-        title: "Configuração incompleta",
-        description: "Preencha as chaves de API e o prompt principal antes de testar.",
+        title: "APIs não configuradas",
+        description: "As APIs não estão configuradas no servidor. Verifique o arquivo .env.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!prompts.required.trim()) {
+      toast({
+        title: "Prompt obrigatório",
+        description: "Configure o prompt principal antes de testar.",
         variant: "destructive",
       });
       return;
     }
 
     toast({
-      title: "Iniciando teste...",
-      description: "O agente de IA está sendo configurado para testes.",
+      title: "Sistema pronto!",
+      description: "Todas as configurações estão corretas. O bot está funcionando.",
     });
   };
 
@@ -76,7 +149,18 @@ const Index = () => {
               </p>
             </div>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="text-sm"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </Button>
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 
@@ -102,50 +186,80 @@ const Index = () => {
         </div>
 
         {/* Main Content */}
-        <div className="grid gap-6 max-w-6xl mx-auto">
-          {/* API Keys */}
-          <ApiKeysCard
-            whatsappToken={whatsappToken}
-            geminiKey={geminiKey}
-            onWhatsappTokenChange={setWhatsappToken}
-            onGeminiKeyChange={setGeminiKey}
-          />
+        <div className="max-w-6xl mx-auto">
+          <Tabs defaultValue="whatsapp" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="whatsapp" className="flex items-center gap-2">
+                <Smartphone className="h-4 w-4" />
+                WhatsApp
+              </TabsTrigger>
+              <TabsTrigger value="basic" className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Configurações Básicas
+              </TabsTrigger>
+              <TabsTrigger value="advanced" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Configurações Avançadas
+              </TabsTrigger>
+              <TabsTrigger value="actions" className="flex items-center gap-2">
+                <Play className="h-4 w-4" />
+                Ações
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Voice and Temperature */}
-          <div className="grid md:grid-cols-2 gap-6">
-            <VoiceSelector
-              selectedVoice={selectedVoice}
-              onVoiceChange={setSelectedVoice}
-            />
-            <TemperatureControl
-              temperature={temperature}
-              onTemperatureChange={setTemperature}
-            />
-          </div>
+            <TabsContent value="whatsapp" className="mt-6">
+              <WhatsAppStatus />
+            </TabsContent>
 
-          {/* Prompt Configuration */}
-          <PromptConfig prompts={prompts} onPromptChange={handlePromptChange} />
+            <TabsContent value="basic" className="space-y-6 mt-6">
+              {/* API Status */}
+              <ApiKeysCard />
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button
-              onClick={handleSave}
-              size="lg"
-              className="gradient-primary text-primary-foreground shadow-lg hover:shadow-glow min-w-[200px]"
-            >
-              <Save className="mr-2 h-5 w-5" />
-              Salvar Configuração
-            </Button>
-            <Button
-              onClick={handleTest}
-              size="lg"
-              variant="outline"
-              className="min-w-[200px] border-2"
-            >
-              <Play className="mr-2 h-5 w-5" />
-              Testar Agente
-            </Button>
-          </div>
+              {/* Voice and Temperature */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <VoiceSelector
+                  selectedVoice={selectedVoice}
+                  onVoiceChange={setSelectedVoice}
+                />
+                <TemperatureControl
+                  temperature={temperature}
+                  onTemperatureChange={setTemperature}
+                />
+              </div>
+
+              {/* Prompt Configuration */}
+              <PromptConfig prompts={prompts} onPromptChange={handlePromptChange} />
+            </TabsContent>
+
+            <TabsContent value="advanced" className="mt-6">
+              <AdvancedSettings
+                settings={advancedSettings}
+                onSettingsChange={setAdvancedSettings}
+              />
+            </TabsContent>
+
+            <TabsContent value="actions" className="mt-6">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <Button
+                  onClick={handleSave}
+                  size="lg"
+                  className="gradient-primary text-primary-foreground shadow-lg hover:shadow-glow min-w-[200px]"
+                >
+                  <Save className="mr-2 h-5 w-5" />
+                  Salvar Configuração
+                </Button>
+                <Button
+                  onClick={handleTest}
+                  size="lg"
+                  variant="outline"
+                  className="min-w-[200px] border-2"
+                >
+                  <Play className="mr-2 h-5 w-5" />
+                  Testar Agente
+                </Button>
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </section>
 
