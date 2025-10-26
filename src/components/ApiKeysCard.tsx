@@ -1,21 +1,13 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Key, MessageSquare } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Key, MessageSquare, CheckCircle } from "lucide-react";
 
-interface ApiKeysCardProps {
-  whatsappToken: string;
-  geminiKey: string;
-  onWhatsappTokenChange: (value: string) => void;
-  onGeminiKeyChange: (value: string) => void;
-}
+export function ApiKeysCard() {
+  const whatsappApiUrl = import.meta.env.VITE_WHATSAPP_API_URL;
+  const whatsappToken = import.meta.env.VITE_WHATSAPP_ACCESS_TOKEN;
+  const whatsappPhoneId = import.meta.env.VITE_WHATSAPP_PHONE_NUMBER_ID;
+  const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
-export function ApiKeysCard({
-  whatsappToken,
-  geminiKey,
-  onWhatsappTokenChange,
-  onGeminiKeyChange,
-}: ApiKeysCardProps) {
   return (
     <Card className="card-floating">
       <CardHeader>
@@ -24,40 +16,75 @@ export function ApiKeysCard({
             <Key className="h-5 w-5 text-secondary-foreground" />
           </div>
           <div>
-            <CardTitle>Chaves de API</CardTitle>
-            <CardDescription>Configure suas credenciais de integração</CardDescription>
+            <CardTitle>Status das APIs</CardTitle>
+            <CardDescription>Verifique se todas as APIs estão configuradas corretamente</CardDescription>
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="whatsapp-token" className="flex items-center gap-2">
-            <MessageSquare className="h-4 w-4" />
-            Token da API do WhatsApp
-          </Label>
-          <Input
-            id="whatsapp-token"
-            type="password"
-            placeholder="Digite o token da API oficial do WhatsApp"
-            value={whatsappToken}
-            onChange={(e) => onWhatsappTokenChange(e.target.value)}
-            className="font-mono"
-          />
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-2 text-sm font-medium">
+              <MessageSquare className="h-4 w-4" />
+              WhatsApp Business API
+            </span>
+            {whatsappToken && whatsappPhoneId ? (
+              <Badge variant="default" className="text-xs">
+                <CheckCircle className="h-3 w-3 mr-1" />
+                Configurado
+              </Badge>
+            ) : (
+              <Badge variant="destructive" className="text-xs">
+                Não configurado
+              </Badge>
+            )}
+          </div>
+          {whatsappApiUrl && (
+            <p className="text-xs text-muted-foreground">
+              API URL: {whatsappApiUrl}
+            </p>
+          )}
+          {whatsappPhoneId && (
+            <p className="text-xs text-muted-foreground">
+              Phone ID: {whatsappPhoneId}
+            </p>
+          )}
         </div>
+
         <div className="space-y-2">
-          <Label htmlFor="gemini-key" className="flex items-center gap-2">
-            <Key className="h-4 w-4" />
-            Chave de API do Gemini
-          </Label>
-          <Input
-            id="gemini-key"
-            type="password"
-            placeholder="Digite a chave de API do Google Gemini"
-            value={geminiKey}
-            onChange={(e) => onGeminiKeyChange(e.target.value)}
-            className="font-mono"
-          />
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-2 text-sm font-medium">
+              <Key className="h-4 w-4" />
+              Google Gemini AI
+            </span>
+            {geminiApiKey ? (
+              <Badge variant="default" className="text-xs">
+                <CheckCircle className="h-3 w-3 mr-1" />
+                Configurado
+              </Badge>
+            ) : (
+              <Badge variant="destructive" className="text-xs">
+                Não configurado
+              </Badge>
+            )}
+          </div>
+          {geminiApiKey && (
+            <p className="text-xs text-muted-foreground">
+              Chave configurada e pronta para uso
+            </p>
+          )}
         </div>
+
+        {(!whatsappToken || !whatsappPhoneId || !geminiApiKey) && (
+          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-sm text-yellow-800 font-medium mb-1">
+              ⚠️ Configuração incompleta
+            </p>
+            <p className="text-xs text-yellow-700">
+              Algumas APIs não estão configuradas. Verifique o arquivo .env do servidor.
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
