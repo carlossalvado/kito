@@ -68,9 +68,9 @@ const Index = () => {
               <Bot className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold gradient-hero bg-clip-text text-transparent">
-                WhatsApp AI Agent
-              </h1>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              WhatsApp AI Agent
+            </h1>
               <p className="text-sm text-muted-foreground">
                 Configure seu assistente inteligente
               </p>
@@ -91,7 +91,7 @@ const Index = () => {
           </div>
           <h2 className="text-4xl md:text-5xl font-bold">
             Configure Seu Agente de{" "}
-            <span className="gradient-hero bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               Inteligência Artificial
             </span>
           </h2>
